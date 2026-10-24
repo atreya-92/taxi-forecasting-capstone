@@ -49,3 +49,4 @@ pytest-cov==5.0.0
 # on Python images that no longer bundle setuptools by default. Pin below 81
 # because setuptools 81 removed the pkg_resources module.
 setuptools<81
+sqlalchemy>=2.0.12,<2.1
