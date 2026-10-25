@@ -10,6 +10,49 @@ tracking, FastAPI serving, recursive batch forecasts, SHAP explanations,
 subgroup evaluation, drift detection, a Streamlit dashboard, and optional AWS
 infrastructure templates. It contains no datasets or trained model bundles.
 
+## Golden Path (clean start to working system)
+
+Prerequisites: Python 3.11 and Git. Optional for the cloud part: AWS CLI, Terraform and Docker.
+
+```powershell
+# 1. Environment and checks
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m pytest
+
+# 2. Data pipeline (January 2024 yellow taxi data)
+.\.venv\Scripts\python.exe -m scripts.run_pipeline --year 2024 --month 1
+
+# 3. Train, tune (25 Optuna trials) and register both models
+.\.venv\Scripts\python.exe -m scripts.train_models --n-trials 25
+
+# 4. Serve the API, then check http://127.0.0.1:8000/health
+.\.venv\Scripts\python.exe -m uvicorn src.serving.api:app --host 127.0.0.1 --port 8000
+
+# 5. Batch forecast, responsible AI analysis, drift report
+.\.venv\Scripts\python.exe -m scripts.batch_forecast --horizon 3
+.\.venv\Scripts\python.exe -m scripts.responsible.run_analysis
+.\.venv\Scripts\python.exe -m scripts.monitoring.demo_drift_report --problem all --mode drift
+
+# 6. Dashboard
+.\.venv\Scripts\python.exe -m pip install -r requirements-dashboard.txt
+$env:API_BASE_URL = "http://127.0.0.1:8000"
+.\.venv\Scripts\python.exe -m streamlit run dashboard/app.py
+```
+
+### One-command run and evidence check
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\golden_path.ps1 -SkipTests
+```
+
+Add `-Train` to retrain both models, or `-Verify` to only check the generated evidence. Addto include a live health check.
+
+### AWS deployment (optional)
+
+Terraform in `infra/terraform` creates ECR, ECS Fargate and an ALB. Build the image from `d to ECR as `latest`, then force a new ECS deployment. The drift demo is synthetic, and themanaged monitoring stack is not deployed.
+
 ## Start Locally
 
 For the preinstalled Windows course image, follow the
